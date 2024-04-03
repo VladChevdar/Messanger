@@ -138,7 +138,7 @@ def handle_client(conn, addr):
                 with lock:
                     if friendname == weather_bot:
                             if friendname in friends[username]:
-                                conn.send("Bot already added")
+                                conn.send("Bot already added".encode())
                             else:
                                 friends[username][friendname] = []
                                 conn.send("Friend added".encode())
