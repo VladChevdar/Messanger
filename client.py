@@ -12,7 +12,6 @@ MAX_FRIENDS = 6
 weather_bot = "Weather-Bot"
 FONT = "Helvetica"
 
-# change port if provided
 if len(sys.argv) > 1:
     PORT = int(sys.argv[1])
 
