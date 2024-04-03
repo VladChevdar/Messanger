@@ -18,9 +18,9 @@ if len(sys.argv) > 1:
 
 weather_bot = "Weather-Bot"
 #Default members
-users["Vlad"] = ""
+users["Vlad"] = "~on" #friend requests on
 friends["Vlad"] = {"Pasha": []}
-users["Pasha"] = ""
+users["Pasha"] = "~on"
 friends["Pasha"] = {"Vlad": []}
 active_users = []
 
@@ -51,19 +51,26 @@ def handle_client(conn, addr):
                     if username in users:
                         conn.send("Username already exists".encode())
                     else:
-                        users[username] = password
+                        users[username] = password + '~on'
                         friends[username] = {}  # Initialize as an empty dictionary for friends and messages
                         conn.send("Signup successful".encode())
             elif command == "LOGIN":
                 username, password = args
                 with lock:
-                    if username in users and users[username] == password:
+                    if username in users and users[username].split('~')[0] == password:
                         conn.send("Login successful".encode())
                         login_user = username
                         if username not in active_users:
                             active_users.append(username)
                     else:
                         conn.send("Invalid username or password".encode())
+            elif command == "FRIEND_REQUESTS":
+                username = args[0]
+                with lock:
+                    if users[username].split('~')[1] == 'on':
+                        conn.send("on".encode())
+                    else:
+                        conn.send("off".encode())
             elif command == "IS_USER_ONLINE":
                 print(active_users)
                 username = args[0]
@@ -132,9 +139,20 @@ def handle_client(conn, addr):
                             del friends[friendname][username]
                     else:
                         conn.send("Friend is not in friend list".encode())
+            elif command == "CHANGE_FRIEND_REQUESTS":
+                username = args[0]
+                with lock:
+                    if users[username].split('~')[1] == 'on':
+                        users[username] = users[username].split('~')[0] + '~off'
+                        conn.send("Friend requests blocked".encode())
+                    else:
+                        users[username] = users[username].split('~')[0] + '~on'
+                        conn.send("Friend requests unblocked".encode())
 
             elif command == "ADDFRIEND":
                 username, friendname = args
+                if username == friendname:
+                    conn.send("Cannot add yourself".encode())
                 with lock:
                     if friendname == weather_bot:
                             if friendname in friends[username]:
@@ -145,6 +163,9 @@ def handle_client(conn, addr):
                     else:
                         if friendname in users:
                             if friendname not in friends[username]:
+                                if users[friendname].split('~')[1] == 'off':
+                                    conn.send("User blocked friend requests".encode())
+                                    continue
                                 friends[username][friendname] = []
                                 conn.send("Friend added".encode())
                             if username not in friends[friendname]:

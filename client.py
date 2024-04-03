@@ -51,6 +51,9 @@ class AppClient(tk.Tk):
         if '|' in entry:
             messagebox.showerror("Fail", "Contains forbidden character '|'")
             return False
+        if '~' in entry:
+            messagebox.showerror("Fail", "Contains forbidden character '~'")
+            return False
         if len(entry) > 10000:
             messagebox.showerror("Fail", "Exceeds max length of 10000 characters")
             return False
@@ -179,10 +182,20 @@ class AppClient(tk.Tk):
         logout_button = tk.Button(self.friends_frame, text="Logout", command=self.logout, font=(FONT,14))
         logout_button.grid(row=20, column=2, pady=(0, 3), sticky='w', ipady=0)
 
+        block_button = "Block Friend Requests" if self.send_command(f"FRIEND_REQUESTS|{self.username}") == "on" else "Unblock Friend Requests"
+        block_friend_request_button = tk.Button(self.friends_frame, text=block_button, command=self.change_friend_requests, width=20, font=(FONT,14))
+        block_friend_request_button.grid(row=20, column=0, pady=(0, 3), sticky='w', ipady=0)
+
         self.friendname_entry.bind('<Return>', lambda event=None: self.add_friend())
 
         self.friendname_entry.delete(0, tk.END)
         self.update_friends_list()
+
+    def change_friend_requests(self):
+        response = self.send_command(f"CHANGE_FRIEND_REQUESTS|{self.username}")
+        if response != "Friend requests blocked" and response != "Friend requests unblocked":
+            messagebox.showerror("Fail", response)
+        self.initialize_friends_frame()
 
     def update_chat(self):
         """Fetches the latest messages and schedules the next update."""
@@ -501,9 +514,6 @@ class AppClient(tk.Tk):
         elif int(response) >= MAX_FRIENDS:
             messagebox.showerror("Fail", "Max friends reached")
         else:
-            if friend_name == self.username:
-                messagebox.showerror("Fail", "Can't add yourself")
-                return
             if friend_name != weather_bot:
                 response = self.send_command(f"FRIENDSCOUNT|{friend_name}")
                 if response != 'None' and int(response) >= MAX_FRIENDS:
@@ -544,6 +554,16 @@ class AppClient(tk.Tk):
             messagebox.showerror("Fail", response)
 
     def signup(self):
+        if not self.sock:
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            try:
+                self.sock.connect((HOST, PORT))
+            except ConnectionRefusedError:
+                messagebox.showerror("Connection Error", "Failed to connect to the server.")
+                self.sock = None
+                #self.destroy()
+                return
+
         self.username = self.username_entry.get()
             
         if len(self.username) > 20:
@@ -567,7 +587,7 @@ class AppClient(tk.Tk):
             return
 
         response = self.send_command(f"SIGNUP|{self.username}|{password}")
-        if response == "Username already exists":
+        if response != "Signup successful":
             messagebox.showerror("Fail", response)
         else:
             self.show_login_frame()
