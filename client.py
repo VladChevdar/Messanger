@@ -373,7 +373,7 @@ class AppClient(tk.Tk):
         else:
             numbers_list = random.sample(range(1, grid_size*grid_size + 1), grid_size*grid_size)
             chat_font = ('Arial', 14)
-            self.messages_text.insert(tk.END, f"\nMatrix size: {grid_size} \nMatrix: {str(numbers_list)}\n\n", 'chat_font')
+            self.messages_text.insert(tk.END, f"\nMatrix size: {grid_size} \nMatrix: {str(numbers_list)}\n", 'chat_font')
             self.messages_text.see(tk.END)
             HundredsGame(grid_size, numbers_list, self.send_message, self.friend_name, self.messages_text, chat_font)
 
@@ -450,7 +450,10 @@ class AppClient(tk.Tk):
                 try:
                     _, grid_size, numbers_list = message[10:].split('#')
                     numbers_list = ast.literal_eval(numbers_list)
-                    #print(f"|{numbers_list}|")
+                    if not (len(numbers_list) == len(set(numbers_list)) and 
+                            len(numbers_list) == int(grid_size)*int(grid_size) and
+                            all(1 <= n <= int(grid_size)*int(grid_size) for n in numbers_list)):
+                        grid_size = 1 #Invalid matrix
                 except ValueError:
                     try:
                         _, grid_size = message[13:].split('#')
@@ -458,12 +461,13 @@ class AppClient(tk.Tk):
                             grid_size = 0
                         else:
                             grid_size = int(grid_size) if int(grid_size) <= 10  and int(grid_size) >= 3 else 0
-                        numbers_list = random.sample(range(1, grid_size*grid_size + 1), grid_size*grid_size)
                     except ValueError:
-                        grid_size = 5
-                        numbers_list = random.sample(range(1, grid_size*grid_size + 1), grid_size*grid_size)
+                        grid_size = 1
+                    numbers_list = random.sample(range(1, grid_size*grid_size + 1), grid_size*grid_size)
                 if grid_size == 0:
                     message = "Invalid matrix size"
+                elif grid_size == 1:
+                    message = "Invalid matrix"
                 else:
                     start_numbers_game = True
                     message = message[:13] + f" #{grid_size} #{str(numbers_list)}"
@@ -489,6 +493,7 @@ class AppClient(tk.Tk):
         # Clear the chat frame, reinitialize the friends frame, and stop updates
         global screen_on
         if screen_on:
+            messagebox.showerror("Error", "Close all other windows to go back")
             return
         if self.friend_name not in bots:
             response = self.send_command(f"FRIEND_OFF|{self.username}|{self.friend_name}")
@@ -684,7 +689,7 @@ class HundredsGame:
         if number == self.number_to_find:
             self.number_to_find += 1
             if number == self.numbers_count:
-                self.print_result(f"Congratulations! You found all the {self.numbers_count} numbers.")
+                self.print_result(f"Congratulations! You found all the {self.numbers_count} numbers")
                 self.root.quit()
                 self.root.destroy()
                 return
@@ -705,10 +710,12 @@ class HundredsGame:
         if self.send_message and self.friend_name:
             if self.friend_name == hundreds_game:
                 self.widget.config(state='normal')
-                self.widget.insert(tk.END, game_result + "\n", 'chat_font')
+                self.widget.insert(tk.END, "\n" + game_result + "\n", 'chat_font')
                 self.widget.see(tk.END)
             else:
                 self.send_message(self.friend_name, game_result)
+        global screen_on
+        screen_on -= 1
 
     def initiate_grid(self):
         for row in range(self.grid_size):
@@ -740,12 +747,10 @@ class HundredsGame:
             else:
                 button.config(text=' ')
 
-    def on_close(self, force=False):
+    def on_close(self):
         if hasattr(self, 'after_id') and self.after_id:
             self.root.after_cancel(self.after_id)
-
-        global screen_on
-        screen_on -= 1
+        self.print_result(f"You found {self.number_to_find - 1} out of {self.numbers_count} numbers")
         self.root.destroy()
 
 if __name__ == "__main__":
