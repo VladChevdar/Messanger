@@ -456,10 +456,10 @@ class AppClient(tk.Tk):
                             grid_size = 5
                         else:
                             grid_size = int(grid_size) if int(grid_size) <= 10  and int(grid_size) >= 2 else 5
-                        numbers_list = random.sample(range(1, grid_size*grid_size + 1), grid_size*grid_size)
+                        numbers_list = random.sample(range(1, grid_size*grid_size + 1), self.numbers_count)
                     except ValueError:
                         grid_size = 5
-                        numbers_list = random.sample(range(1, grid_size*grid_size + 1), grid_size*grid_size)
+                        numbers_list = random.sample(range(1, grid_size*grid_size + 1), self.numbers_count)
                 message = message[:9] + f" #{grid_size} #{str(numbers_list)}"
             send_again = False
             if len(message) > 900:
@@ -639,59 +639,63 @@ class HundredsGame:
             numbers_list = random.sample(range(1, new_grid_size*new_grid_size + 1), new_grid_size*new_grid_size)
         self.grid_size = new_grid_size if new_grid_size <= 10 and new_grid_size >= 2 else 10
         self.root = tk.Tk()
-        self.root.title("Find: 1")
+        self.padding = '\t' * self.grid_size if self.grid_size > 3 else '\t'
+        self.root.title(f"Find: 1{self.padding}Time: 00:00")
         self.root.resizable(False, False)
         self.send_message = send_message
         self.friend_name = friend_name
         self.widget = widget
         self.chat_font = chat_font
+        self.stop_timer = False
+        self.numbers_count = self.grid_size*self.grid_size
 
         self.numbers_list = numbers_list
         self.number_to_find = 1
         self.button_height = 3  # Height in text units
         self.button_width = 4   # Width in text units
-        self.button_font = ('Arial', 14)  # Font for the button text
+        self.button_font = ('Arial', 16)  # Font for the button text
+        self.after_id = 0  # Store the ID of the after method
 
         self.buttons = {}  # Track buttons to update them
 
         global game_result
 
+        self.start_time = time.time()
         self.initiate_grid()
 
         # Bind the window close event
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
 
-        self.start_time = time.time()
         self.root.mainloop()
     
     def button_command(self, number):
         if number == self.number_to_find:
             self.number_to_find += 1
-            self.root.title(f"Find: {self.number_to_find}")
             if number == self.grid_size*self.grid_size:
-                end_time = time.time()
-                elapsed_time = end_time - self.start_time
-                minutes, seconds = divmod(elapsed_time, 60)
-                if minutes > 0:
-                    if self.send_message and self.friend_name:
-                        game_result = f"Completed {self.grid_size*self.grid_size} numbers in {int(minutes)} minutes and {int(seconds)} seconds!"
-                        if self.friend_name == hundreds_game:
-                            self.widget.insert(tk.END, game_result + "\n", 'chat_font')
-                            self.widget.see(tk.END)
-                        else:
-                            self.send_message(self.friend_name, game_result)
-                else:
-                    if self.send_message and self.friend_name:
-                        game_result = f"Completed {self.grid_size*self.grid_size} numbers in {int(seconds)} seconds!"
-                        if self.friend_name == hundreds_game:
-                            self.widget.insert(tk.END, game_result + "\n", 'chat_font')
-                            self.widget.see(tk.END)
-                        else:
-                            self.send_message(self.friend_name, game_result)
+                self.print_result(f"Congratulations! You found all the {self.numbers_count} numbers.")
                 self.root.quit()
                 self.root.destroy()
                 return
             self.update_grid()
+
+    def print_result(self, message=""):
+        elapsed_time = time.time() - self.start_time
+        minutes, seconds = divmod(elapsed_time, 60)
+        # Define the game_result message based on whether minutes > 0.
+        if minutes > 0:
+            time_msg = f"{int(minutes)} minutes and {int(seconds)} seconds"
+        else:
+            time_msg = f"{int(seconds)} seconds"
+
+        game_result = f"{message}\nTime: {time_msg}!"
+
+        # Check if we need to send a message or update the widget directly.
+        if self.send_message and self.friend_name:
+            if self.friend_name == hundreds_game:
+                self.widget.insert(tk.END, game_result + "\n", 'chat_font')
+                self.widget.see(tk.END)
+            else:
+                self.send_message(self.friend_name, game_result)
 
     def initiate_grid(self):
         for row in range(self.grid_size):
@@ -702,6 +706,15 @@ class HundredsGame:
                                    command=lambda n=number: self.button_command(n))
                 button.grid(row=row, column=col, padx=1, pady=1)
                 self.buttons[(row, col)] = button
+        self.update_timer()
+
+    def update_timer(self):
+        if self.stop_timer:
+            return
+        elapsed_time = time.time() - self.start_time
+        minutes, seconds = divmod(elapsed_time, 60)
+        self.root.title(f"Find: {self.number_to_find}{self.padding}Time: {int(minutes)}:{int(seconds)}")
+        self.after_id = self.root.after(100, self.update_timer)  # Store the ID
 
     def update_grid(self):
         for idx, number in enumerate(self.numbers_list):
@@ -713,13 +726,12 @@ class HundredsGame:
                 button.config(text=' ')
 
     def on_close(self):
+        self.stop_timer = True
+        if hasattr(self, 'after_id'):
+            self.root.after_cancel(self.after_id)
         if self.send_message and self.friend_name:
-            game_result = "Game closed!"
-            if self.friend_name == hundreds_game:
-                self.widget.insert(tk.END, game_result + "\n", 'chat_font')
-                self.widget.see(tk.END)
-            else:
-                self.send_message(self.friend_name, game_result)
+            global game_result
+            self.print_result(f"You found only {self.number_to_find - 1} out of {self.numbers_count} numbers.")
         self.root.destroy()
 
 if __name__ == "__main__":
