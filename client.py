@@ -133,9 +133,6 @@ class AppClient(tk.Tk):
 
         return frame
 
-    def start_100game(self, grid_size=5, numbers_list=None):
-        response = self.send_command(f"START_100GAME|{grid_size}|{str(numbers_list)}") 
-
     def display_friends_buttons(self, friends_list):
         # Clear current friend buttons
         for widget in self.friends_buttons_frame.winfo_children():
@@ -421,19 +418,21 @@ class AppClient(tk.Tk):
                 self.update_entire_chat()
                 self.last_message = ''
                 return
-            if message[:10] == "#100 game ":
+            if message[:9] == "#100 game":
+                start_100game = True
                 try:
                     _, grid_size, numbers_list = message[10:].split('#')
                 except ValueError:
-                    _, grid_size = message[10:].split('#')
-                    if grid_size.isdigit():
-                        grid_size = int(grid_size)
-                    else:
+                    try:
+                        _, grid_size = message[9:].split('#')
+                        if not grid_size.isdigit():
+                            grid_size = 5
+                        else:
+                            grid_size = int(grid_size) if int(grid_size) <= 10  and int(grid_size) >= 2 else 5
+                        numbers_list = random.sample(range(1, grid_size*grid_size + 1), grid_size*grid_size)
+                    except ValueError:
                         grid_size = 5
-                    if grid_size > 10:
-                        grid_size = 10
-                    numbers_list = random.sample(range(1, grid_size*grid_size + 1), grid_size*grid_size)
-                start_100game = True
+                        numbers_list = random.sample(range(1, grid_size*grid_size + 1), grid_size*grid_size)
                 message = message[:9] + f" #{grid_size} #{str(numbers_list)}"
             send_again = False
             if len(message) > 900:
@@ -451,7 +450,7 @@ class AppClient(tk.Tk):
                 self.send_message(friend_name, message[900:])
             
             if start_100game:
-                response = self.send_command(f"START_100GAME|{grid_size}|{str(numbers_list)}")
+                response = self.send_command(f"START_100GAME|{self.username}|{self.friend_name}|{grid_size}|{str(numbers_list)}") 
 
     def back_to_friends(self):
         # Clear the chat frame, reinitialize the friends frame, and stop updates
