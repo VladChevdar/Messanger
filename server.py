@@ -188,6 +188,11 @@ def handle_client(conn, addr):
                     if friendname in friends[username]:
                         friends[username][friendname] = []
                         conn.send("Messages cleared".encode())
+            elif command == "START_100GAME":
+                grid_size, numbers_list = args
+                with lock:
+                    result = subprocess.Popen(['python3', '100game.py', grid_size, numbers_list])
+                    conn.send("Game started".encode())
             elif command == "REPORT_WEATHER":
                 input_data = args[0]
                 input_data = input_data.replace('~', '\n')

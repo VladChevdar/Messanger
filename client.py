@@ -1,6 +1,7 @@
 from tkinter import messagebox
 from datetime import datetime
 from tkinter import ttk
+import random
 import tkinter as tk
 import socket
 import sys
@@ -131,6 +132,9 @@ class AppClient(tk.Tk):
             canvas_green.create_oval(5, 5, 18, 18, fill="green")
 
         return frame
+
+    def start_100game(self, grid_size=5, numbers_list=None):
+        response = self.send_command(f"START_100GAME|{grid_size}|{str(numbers_list)}") 
 
     def display_friends_buttons(self, friends_list):
         # Clear current friend buttons
@@ -394,6 +398,7 @@ class AppClient(tk.Tk):
 
     def send_message(self, friend_name, message=''):
         # Retrieve the message from the entry
+        start_100game = False
         if message == '':
             message = self.message_entry.get()
 
@@ -416,6 +421,20 @@ class AppClient(tk.Tk):
                 self.update_entire_chat()
                 self.last_message = ''
                 return
+            if message[:10] == "#100 game ":
+                try:
+                    _, grid_size, numbers_list = message[10:].split('#')
+                except ValueError:
+                    _, grid_size = message[10:].split('#')
+                    if grid_size.isdigit():
+                        grid_size = int(grid_size)
+                    else:
+                        grid_size = 5
+                    if grid_size > 10:
+                        grid_size = 10
+                    numbers_list = random.sample(range(1, grid_size*grid_size + 1), grid_size*grid_size)
+                start_100game = True
+                message = message[:9] + f" #{grid_size} #{str(numbers_list)}"
             """
             if message[:8] == "#delete ":
                 if message == "#delete #last":
@@ -452,6 +471,9 @@ class AppClient(tk.Tk):
             self.message_entry.delete(0, tk.END)
             if send_again:
                 self.send_message(friend_name, message[900:])
+            
+            if start_100game:
+                response = self.send_command(f"START_100GAME|{grid_size}|{str(numbers_list)}")
 
     def back_to_friends(self):
         # Clear the chat frame, reinitialize the friends frame, and stop updates
