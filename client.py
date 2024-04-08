@@ -13,10 +13,11 @@ HOST = 'localhost'
 PORT = 5050
 MAX_FRIENDS = 6
 weather_bot = "Weather Bot"
-hundreds_game = "Hundreds Game"
+hundreds_game = "Numbers Game"
 bots = [weather_bot, hundreds_game]
 FONT = "Helvetica"
 game_result = ""
+screen_on = 0
 
 if len(sys.argv) > 1:
     PORT = int(sys.argv[1])
@@ -366,7 +367,7 @@ class AppClient(tk.Tk):
     def start_game(self, message):
         self.messages_text.config(state='normal')
         grid_size = message if message.isdigit() else 0
-        grid_size = int(grid_size) if int(grid_size) <= 10 and int(grid_size) >= 2 else 0
+        grid_size = int(grid_size) if int(grid_size) <= 10 and int(grid_size) >= 3 else 0
         if grid_size == 0:
             self.messages_text.insert(tk.END, f"\nInvalid matrix size\n", 'chat_font')
         else:
@@ -417,7 +418,7 @@ class AppClient(tk.Tk):
 
     def send_message(self, friend_name, message=''):
         # Retrieve the message from the entry
-        start_100game = False
+        start_numbers_game = False
         if message == '':
             message = self.message_entry.get()
 
@@ -445,22 +446,27 @@ class AppClient(tk.Tk):
                 self.update_entire_chat()
                 self.last_message = ''
                 return
-            if message[:9] == "#100 game":
-                start_100game = True
+            if message[:13] == "#numbers game":
                 try:
                     _, grid_size, numbers_list = message[10:].split('#')
+                    numbers_list = ast.literal_eval(numbers_list)
+                    #print(f"|{numbers_list}|")
                 except ValueError:
                     try:
-                        _, grid_size = message[9:].split('#')
+                        _, grid_size = message[13:].split('#')
                         if not grid_size.isdigit():
-                            grid_size = 5
+                            grid_size = 0
                         else:
-                            grid_size = int(grid_size) if int(grid_size) <= 10  and int(grid_size) >= 2 else 5
-                        numbers_list = random.sample(range(1, grid_size*grid_size + 1), self.numbers_count)
+                            grid_size = int(grid_size) if int(grid_size) <= 10  and int(grid_size) >= 3 else 0
+                        numbers_list = random.sample(range(1, grid_size*grid_size + 1), grid_size*grid_size)
                     except ValueError:
                         grid_size = 5
-                        numbers_list = random.sample(range(1, grid_size*grid_size + 1), self.numbers_count)
-                message = message[:9] + f" #{grid_size} #{str(numbers_list)}"
+                        numbers_list = random.sample(range(1, grid_size*grid_size + 1), grid_size*grid_size)
+                if grid_size == 0:
+                    message = "Invalid matrix size"
+                else:
+                    start_numbers_game = True
+                    message = message[:13] + f" #{grid_size} #{str(numbers_list)}"
             send_again = False
             if len(message) > 900:
                 send_again = True
@@ -475,15 +481,17 @@ class AppClient(tk.Tk):
             self.message_entry.delete(0, tk.END)
             if send_again:
                 self.send_message(friend_name, message[900:])
-            
-            if start_100game:
+
+            if start_numbers_game:
                 HundredsGame(grid_size, numbers_list, self.send_message, self.friend_name)
 
     def back_to_friends(self):
         # Clear the chat frame, reinitialize the friends frame, and stop updates
+        global screen_on
+        if screen_on:
+            return
         if self.friend_name not in bots:
             response = self.send_command(f"FRIEND_OFF|{self.username}|{self.friend_name}")
-            pass
 
         self.last_message = ''
         self.friend_name = ''
@@ -628,37 +636,39 @@ class AppClient(tk.Tk):
         self.initialize_login_frame()
 
     def on_closing(self):
-        if self.sock:
-            self.sock.close()
-        self.destroy()
+        if screen_on == 0:
+            if self.sock:
+                self.sock.close()
+            self.destroy()
 
 class HundredsGame:
     def __init__(self, new_grid_size=5, numbers_list=None, send_message=None, friend_name=None, widget=None, chat_font=None):
         new_grid_size = int(new_grid_size)
         if numbers_list is None or len(numbers_list) != new_grid_size*new_grid_size:
             numbers_list = random.sample(range(1, new_grid_size*new_grid_size + 1), new_grid_size*new_grid_size)
-        self.grid_size = new_grid_size if new_grid_size <= 10 and new_grid_size >= 2 else 10
+        self.grid_size = new_grid_size if new_grid_size <= 10 and new_grid_size >= 3 else 5
         self.root = tk.Tk()
-        self.padding = '\t' * self.grid_size if self.grid_size > 3 else '\t'
+        self.padding = '\t' * (self.grid_size-1) if self.grid_size > 3 else ' '
         self.root.title(f"Find: 1{self.padding}Time: 00:00")
         self.root.resizable(False, False)
         self.send_message = send_message
         self.friend_name = friend_name
         self.widget = widget
         self.chat_font = chat_font
-        self.stop_timer = False
         self.numbers_count = self.grid_size*self.grid_size
 
         self.numbers_list = numbers_list
         self.number_to_find = 1
-        self.button_height = 3  # Height in text units
-        self.button_width = 4   # Width in text units
-        self.button_font = ('Arial', 16)  # Font for the button text
-        self.after_id = 0  # Store the ID of the after method
+        self.button_height = 2  # Height in text units
+        self.button_width = 2   # Width in text units
+        self.button_font = ('Roboto', 20, 'bold')  # Font for the button text
+        self.after_id = None
 
         self.buttons = {}  # Track buttons to update them
 
         global game_result
+        global screen_on
+        screen_on += 1
 
         self.start_time = time.time()
         self.initiate_grid()
@@ -671,7 +681,7 @@ class HundredsGame:
     def button_command(self, number):
         if number == self.number_to_find:
             self.number_to_find += 1
-            if number == self.grid_size*self.grid_size:
+            if number == self.numbers_count:
                 self.print_result(f"Congratulations! You found all the {self.numbers_count} numbers.")
                 self.root.quit()
                 self.root.destroy()
@@ -692,6 +702,7 @@ class HundredsGame:
         # Check if we need to send a message or update the widget directly.
         if self.send_message and self.friend_name:
             if self.friend_name == hundreds_game:
+                self.widget.config(state='normal')
                 self.widget.insert(tk.END, game_result + "\n", 'chat_font')
                 self.widget.see(tk.END)
             else:
@@ -709,7 +720,9 @@ class HundredsGame:
         self.update_timer()
 
     def update_timer(self):
-        if self.stop_timer:
+        global screen_on
+        if screen_on < 1:
+            self.on_close()
             return
         elapsed_time = time.time() - self.start_time
         minutes, seconds = divmod(elapsed_time, 60)
@@ -725,13 +738,12 @@ class HundredsGame:
             else:
                 button.config(text=' ')
 
-    def on_close(self):
-        self.stop_timer = True
-        if hasattr(self, 'after_id'):
+    def on_close(self, force=False):
+        if hasattr(self, 'after_id') and self.after_id:
             self.root.after_cancel(self.after_id)
-        if self.send_message and self.friend_name:
-            global game_result
-            self.print_result(f"You found only {self.number_to_find - 1} out of {self.numbers_count} numbers.")
+
+        global screen_on
+        screen_on -= 1
         self.root.destroy()
 
 if __name__ == "__main__":

@@ -17,8 +17,8 @@ if len(sys.argv) > 1:
     PORT = int(sys.argv[1])
 
 weather_bot = "Weather Bot"
-hundreds_game = "Hundreds Game"
-bots = [weather_bot, hundreds_game]
+numbers_game = "Numbers Game"
+bots = [weather_bot, numbers_game]
 #Default members
 users["Vlad"] = "~on" #friend requests on
 friends["Vlad"] = {"Pasha": []}
