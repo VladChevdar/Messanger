@@ -1,9 +1,11 @@
 from tkinter import messagebox
 from datetime import datetime
 from tkinter import ttk
-import random
 import tkinter as tk
 import socket
+import random
+import time
+import ast
 import sys
 
 # Constants
@@ -12,6 +14,7 @@ PORT = 5050
 MAX_FRIENDS = 6
 weather_bot = "Weather-Bot"
 FONT = "Helvetica"
+game_result = ""
 
 if len(sys.argv) > 1:
     PORT = int(sys.argv[1])
@@ -450,7 +453,7 @@ class AppClient(tk.Tk):
                 self.send_message(friend_name, message[900:])
             
             if start_100game:
-                response = self.send_command(f"START_100GAME|{self.username}|{self.friend_name}|{grid_size}|{str(numbers_list)}") 
+                HundredsGame(grid_size, numbers_list, self.send_message, self.friend_name)
 
     def back_to_friends(self):
         # Clear the chat frame, reinitialize the friends frame, and stop updates
@@ -604,6 +607,82 @@ class AppClient(tk.Tk):
         if self.sock:
             self.sock.close()
         self.destroy()
+
+class HundredsGame:
+    def __init__(self, new_grid_size=5, numbers_list=None, send_message=None, friend_name=None):
+        new_grid_size = int(new_grid_size)
+        if numbers_list is None or len(numbers_list) != new_grid_size*new_grid_size:
+            numbers_list = random.sample(range(1, new_grid_size*new_grid_size + 1), new_grid_size*new_grid_size)
+        self.grid_size = new_grid_size if new_grid_size <= 10 and new_grid_size >= 2 else 10
+        self.root = tk.Tk()
+        self.root.title("Find: 1")
+        self.root.resizable(False, False)
+        self.send_message = send_message
+        self.friend_name = friend_name
+
+        self.numbers_list = numbers_list
+        self.number_to_find = 1
+        self.button_height = 3  # Height in text units
+        self.button_width = 4   # Width in text units
+        self.button_font = ('Arial', 14)  # Font for the button text
+
+        self.buttons = {}  # Track buttons to update them
+
+        global game_result
+
+        self.initiate_grid()
+
+        # Bind the window close event
+        self.root.protocol("WM_DELETE_WINDOW", self.on_close)
+
+        self.start_time = time.time()
+        self.root.mainloop()
+    
+    def button_command(self, number):
+        if number == self.number_to_find:
+            self.number_to_find += 1
+            self.root.title(f"Find: {self.number_to_find}")
+            if number == self.grid_size*self.grid_size:
+                end_time = time.time()
+                elapsed_time = end_time - self.start_time
+                minutes, seconds = divmod(elapsed_time, 60)
+                if minutes > 0:
+                    if self.send_message and self.friend_name:
+                        game_result = f"Completed {self.grid_size*self.grid_size} numbers in {int(minutes)} minutes and {int(seconds)} seconds!"
+                        self.send_message(self.friend_name, game_result)
+                else:
+                    if self.send_message and self.friend_name:
+                        game_result = f"Completed {self.grid_size*self.grid_size} numbers in {int(seconds)} seconds!"
+                        self.send_message(self.friend_name, game_result)
+                self.root.quit()
+                self.root.destroy()
+                return
+            self.update_grid()
+
+    def initiate_grid(self):
+        for row in range(self.grid_size):
+            for col in range(self.grid_size):
+                number = self.numbers_list[row*self.grid_size + col]
+                button = tk.Button(self.root, text=str(number), width=self.button_width, 
+                                   height=self.button_height, font=self.button_font, 
+                                   command=lambda n=number: self.button_command(n))
+                button.grid(row=row, column=col, padx=1, pady=1)
+                self.buttons[(row, col)] = button
+
+    def update_grid(self):
+        for idx, number in enumerate(self.numbers_list):
+            row, col = divmod(idx, self.grid_size)
+            button = self.buttons[(row, col)]
+            if number >= self.number_to_find:
+                button.config(text=str(number), command=lambda n=number: self.button_command(n))
+            else:
+                button.config(text=' ')
+
+    def on_close(self):
+        if self.send_message and self.friend_name:
+            game_result = "Game closed!"
+            self.send_message(self.friend_name, game_result)
+        self.root.destroy()
 
 if __name__ == "__main__":
     app = AppClient()

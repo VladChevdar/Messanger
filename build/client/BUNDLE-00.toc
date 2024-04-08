@@ -1,0 +1,3 @@
+([('client',
+   '/Users/vladchevdar/Desktop/app/Messenger/dist/client',
+   'EXECUTABLE')],)

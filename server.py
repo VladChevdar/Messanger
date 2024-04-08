@@ -188,19 +188,6 @@ def handle_client(conn, addr):
                     if friendname in friends[username]:
                         friends[username][friendname] = []
                         conn.send("Messages cleared".encode())
-            elif command == "START_100GAME":
-                username, friendname, grid_size, numbers_list = args
-                conn.send("Game started".encode())
-                process = subprocess.Popen(['python3', '100game.py', grid_size, numbers_list],
-                                            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-                stdout, stderr = process.communicate()
-                result = stdout.strip()
-                with lock:
-                    # Store the result in chat
-                    current_time = datetime.now()
-                    time_str = current_time.strftime("%I:%M %p")
-                    friends[username][friendname].append('+' + f"{result} {time_str}")
-                    friends[friendname][username].append('-' + f"{result} {time_str}")
             elif command == "REPORT_WEATHER":
                 input_data = args[0]
                 input_data = input_data.replace('~', '\n')
