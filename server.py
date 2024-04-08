@@ -280,52 +280,6 @@ def handle_client(conn, addr):
                         conn.send("Session closed".encode())
                     except ValueError:
                         conn.send("Inactive sesion".encode())
-            """
-            elif command == "DELETE_LAST_MESSAGE":
-                username, friendname = args
-                if friendname in friends[username]:
-                    found = False
-                    #DELETE FOR USER
-                    for message in reversed(friends[username][friendname]):
-                        if message.startswith('+'):
-                            friends[username][friendname].remove(message)
-                            found = True
-                            break
-                    #DELETE FOR FRIEND
-                    for message in reversed(friends[friendname][username]):
-                        if message.startswith('-'):
-                            friends[friendname][username].remove(message)
-                            found = True
-                            break
-                    if not found:
-                        conn.send("Message not found".encode())
-                    else:
-                        conn.send("Message deleted".encode())
-                else:
-                    conn.send("Friend not found".encode())
-
-            elif command == "DELETE_MESSAGE":
-                username, friendname, del_message = args
-                if friendname in friends[username]:
-                    # Attempt to find the message by content
-                    found = False
-                    for message in friends[username][friendname]:
-                        if message == ('+' + del_message):
-                            friends[username][friendname].remove(message)
-                            found = True
-                            break
-                    for message in friends[friendname][username]:
-                        if message == ('-' + del_message):
-                            friends[friendname][username].remove(message)
-                            found = True
-                            break
-                    if not found:
-                        conn.send("Message not found".encode())
-                    else:
-                        conn.send("Message deleted".encode())
-                else:
-                    conn.send("Friend not found".encode())
-            """
         except:
             # Handle client disconnect
             with lock:

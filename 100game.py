@@ -15,9 +15,9 @@ class HundredsGame:
 
         self.numbers_list = numbers_list
         self.number_to_find = 1
-        self.button_height = 2  # Height in text units
+        self.button_height = 3  # Height in text units
         self.button_width = 4   # Width in text units
-        self.button_font = ('Arial', 12)  # Font for the button text
+        self.button_font = ('Arial', 14)  # Font for the button text
 
         self.buttons = {}  # Track buttons to update them
 

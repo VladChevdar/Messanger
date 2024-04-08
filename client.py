@@ -435,28 +435,6 @@ class AppClient(tk.Tk):
                     numbers_list = random.sample(range(1, grid_size*grid_size + 1), grid_size*grid_size)
                 start_100game = True
                 message = message[:9] + f" #{grid_size} #{str(numbers_list)}"
-            """
-            if message[:8] == "#delete ":
-                if message == "#delete #last":
-                    response = self.send_command(f"DELETE_LAST_MESSAGE|{self.username}|{friend_name}")
-                    if response != "Message deleted":
-                        messagebox.showerror("Fail", response)
-                    else:
-                        self.message_entry.delete(0, tk.END)
-                        self.update_entire_chat()
-                    return
-
-                response = self.send_command(f"DELETE_MESSAGE|{self.username}|{friend_name}|{message[8:] + ' '}")
-                if response != "Message deleted":
-                    response = self.send_command(f"DELETE_MESSAGE|{self.username}|{friend_name}|{message[8:]}")
-
-                if response != "Message deleted":
-                    messagebox.showerror("Fail", response)
-                else:
-                    self.message_entry.delete(0, tk.END)
-                    self.update_entire_chat()
-                return
-            """
             send_again = False
             if len(message) > 900:
                 send_again = True
