@@ -12,7 +12,9 @@ import sys
 HOST = 'localhost'
 PORT = 5050
 MAX_FRIENDS = 6
-weather_bot = "Weather-Bot"
+weather_bot = "Weather Bot"
+hundreds_game = "Hundreds Game"
+bots = [weather_bot, hundreds_game]
 FONT = "Helvetica"
 game_result = ""
 
@@ -143,7 +145,7 @@ class AppClient(tk.Tk):
 
         # Add a composite widget for each friend
         for friend in friends_list:
-            if friend == "" or friend == weather_bot:
+            if friend == "" or friend in bots:
                 self.create_friend_button(self.friends_buttons_frame, friend, lambda f=friend: self.open_chat(f))
             else:
                 response = self.send_command(f"CHECK_FOR_NOTIFICATION|{self.username}|{friend}")
@@ -256,7 +258,7 @@ class AppClient(tk.Tk):
         # Populate with recent messages
         self.populate_messages(friend_name, True)
 
-        if friend_name == weather_bot:
+        if friend_name in bots:
             return
 
         # Start updating chat
@@ -278,9 +280,9 @@ class AppClient(tk.Tk):
         messages = self.send_long_command(f"GETCHAT|{self.username}|{friend_name}|{self.last_message}")
         time_padding = ' ' * 113
         if messages == "NO_MESSAGES":
+            self.messages_text.config(state='normal')
+            self.messages_text.delete(1.0, tk.END)  # Clear previous messages
             if friend_name == weather_bot:
-                self.messages_text.config(state='normal')
-                self.messages_text.delete(1.0, tk.END)  # Clear previous messages
                 # Inserting new instructions and information into the messages_text widget
                 self.messages_text.insert(tk.END, "Look up the up to date weather in any city\n", "chat_font")
                 self.messages_text.insert(tk.END, "Command to use: option-city-state\n\n", "chat_font")
@@ -290,15 +292,16 @@ class AppClient(tk.Tk):
                 self.messages_text.insert(tk.END, "3 - Brief Weather Report with some Jokes\n\n", "chat_font")
                 self.messages_text.insert(tk.END, "Example input: 1-Portland-Oregon\n", "chat_font")
                 self.messages_text.config(state='disabled')
+            elif friend_name == hundreds_game:
+                self.messages_text.insert(tk.END, "Welcome to the Hundreds Game!\n\n", "chat_font")
+                self.messages_text.insert(tk.END, "To start enter a number for the rows and columns.\n", "chat_font")
+                self.messages_text.insert(tk.END, "Example input: 5 (min: 2, max: 10)\n", "chat_font") 
+                self.messages_text.insert(tk.END, "The goal is to find the numbers from 1 to 25 in order.\n\n", "chat_font")
+                self.messages_text.insert(tk.END, "Click on the numbers to find them.\n", "chat_font")
+                self.messages_text.insert(tk.END, "Good luck!\n", "chat_font")
+                self.messages_text.config(state='disabled')
             else:
-                self.messages_text.config(state='normal')
-                self.messages_text.delete(1.0, tk.END)  # Clear previous messages
                 self.messages_text.insert(tk.END, f"Start chatting with {friend_name}.\n\n", 'chat_font')
-                #self.messages_text.insert(tk.END, "Chat is empty.\n")
-                #self.messages_text.insert(tk.END, "\nAvaliable commands\n")
-                #self.messages_text.insert(tk.END, "#clear\n")
-                #self.messages_text.insert(tk.END, "#delete #last\n")
-                #self.messages_text.insert(tk.END, "#delete <message>\n")
                 self.messages_text.config(state='disabled')
         elif messages != "NO_NEW_MESSAGES":
             messages_list = messages.split('|')
@@ -359,6 +362,22 @@ class AppClient(tk.Tk):
         self.message_entry.delete(0, tk.END)
 
         self.display_weather_report()
+    
+    def start_game(self, message):
+        self.messages_text.config(state='normal')
+        grid_size = message if message.isdigit() else 0
+        grid_size = int(grid_size) if int(grid_size) <= 10 and int(grid_size) >= 2 else 0
+        if grid_size == 0:
+            self.messages_text.insert(tk.END, f"\nInvalid matrix size\n", 'chat_font')
+        else:
+            numbers_list = random.sample(range(1, grid_size*grid_size + 1), grid_size*grid_size)
+            chat_font = ('Arial', 14)
+            self.messages_text.insert(tk.END, f"\nMatrix size: {grid_size} \nMatrix: {str(numbers_list)}\n\n", 'chat_font')
+            self.messages_text.see(tk.END)
+            HundredsGame(grid_size, numbers_list, self.send_message, self.friend_name, self.messages_text, chat_font)
+
+        self.messages_text.config(state='disabled')
+        self.messages_text.see(tk.END)
 
     def display_weather_report(self):
         if self.friend_name != weather_bot:
@@ -406,8 +425,13 @@ class AppClient(tk.Tk):
             return
     
         if friend_name == weather_bot:
-            self.fetch_weather(message)
             self.message_entry.delete(0, tk.END)
+            self.fetch_weather(message)
+            return
+
+        if friend_name == hundreds_game:
+            self.message_entry.delete(0, tk.END)
+            self.start_game(message)
             return
 
         if message:
@@ -457,7 +481,7 @@ class AppClient(tk.Tk):
 
     def back_to_friends(self):
         # Clear the chat frame, reinitialize the friends frame, and stop updates
-        if self.friend_name != weather_bot:
+        if self.friend_name not in bots:
             response = self.send_command(f"FRIEND_OFF|{self.username}|{self.friend_name}")
             pass
 
@@ -516,7 +540,7 @@ class AppClient(tk.Tk):
         elif int(response) >= MAX_FRIENDS:
             messagebox.showerror("Fail", "Max friends reached")
         else:
-            if friend_name != weather_bot:
+            if friend_name not in bots:
                 response = self.send_command(f"FRIENDSCOUNT|{friend_name}")
                 if response != 'None' and int(response) >= MAX_FRIENDS:
                     messagebox.showerror("Fail", "User max friends reached")
@@ -528,7 +552,7 @@ class AppClient(tk.Tk):
             else:
                 self.friendname_entry.delete(0, tk.END)
                 self.update_friends_list()
-                if friend_name != weather_bot:
+                if friend_name not in bots:
                     response = self.send_command(f"FRIEND_OFF|{self.username}|{friend_name}")
                     response = self.send_command(f"FRIEND_OFF|{friend_name}|{self.username}")
                     pass
@@ -574,7 +598,7 @@ class AppClient(tk.Tk):
         elif len(self.username) < 1:
             messagebox.showerror("Fail", "Name too short")
             return
-        elif self.username == weather_bot:
+        elif self.username in bots:
             messagebox.showerror("Fail", "Username is taken")
             return
 
@@ -609,7 +633,7 @@ class AppClient(tk.Tk):
         self.destroy()
 
 class HundredsGame:
-    def __init__(self, new_grid_size=5, numbers_list=None, send_message=None, friend_name=None):
+    def __init__(self, new_grid_size=5, numbers_list=None, send_message=None, friend_name=None, widget=None, chat_font=None):
         new_grid_size = int(new_grid_size)
         if numbers_list is None or len(numbers_list) != new_grid_size*new_grid_size:
             numbers_list = random.sample(range(1, new_grid_size*new_grid_size + 1), new_grid_size*new_grid_size)
@@ -619,6 +643,8 @@ class HundredsGame:
         self.root.resizable(False, False)
         self.send_message = send_message
         self.friend_name = friend_name
+        self.widget = widget
+        self.chat_font = chat_font
 
         self.numbers_list = numbers_list
         self.number_to_find = 1
@@ -649,11 +675,19 @@ class HundredsGame:
                 if minutes > 0:
                     if self.send_message and self.friend_name:
                         game_result = f"Completed {self.grid_size*self.grid_size} numbers in {int(minutes)} minutes and {int(seconds)} seconds!"
-                        self.send_message(self.friend_name, game_result)
+                        if self.friend_name == hundreds_game:
+                            self.widget.insert(tk.END, game_result + "\n", 'chat_font')
+                            self.widget.see(tk.END)
+                        else:
+                            self.send_message(self.friend_name, game_result)
                 else:
                     if self.send_message and self.friend_name:
                         game_result = f"Completed {self.grid_size*self.grid_size} numbers in {int(seconds)} seconds!"
-                        self.send_message(self.friend_name, game_result)
+                        if self.friend_name == hundreds_game:
+                            self.widget.insert(tk.END, game_result + "\n", 'chat_font')
+                            self.widget.see(tk.END)
+                        else:
+                            self.send_message(self.friend_name, game_result)
                 self.root.quit()
                 self.root.destroy()
                 return
@@ -681,7 +715,11 @@ class HundredsGame:
     def on_close(self):
         if self.send_message and self.friend_name:
             game_result = "Game closed!"
-            self.send_message(self.friend_name, game_result)
+            if self.friend_name == hundreds_game:
+                self.widget.insert(tk.END, game_result + "\n", 'chat_font')
+                self.widget.see(tk.END)
+            else:
+                self.send_message(self.friend_name, game_result)
         self.root.destroy()
 
 if __name__ == "__main__":

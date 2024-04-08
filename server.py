@@ -16,7 +16,9 @@ lock = threading.Lock()
 if len(sys.argv) > 1:
     PORT = int(sys.argv[1])
 
-weather_bot = "Weather-Bot"
+weather_bot = "Weather Bot"
+hundreds_game = "Hundreds Game"
+bots = [weather_bot, hundreds_game]
 #Default members
 users["Vlad"] = "~on" #friend requests on
 friends["Vlad"] = {"Pasha": []}
@@ -154,7 +156,7 @@ def handle_client(conn, addr):
                 if username == friendname:
                     conn.send("Cannot add yourself".encode())
                 with lock:
-                    if friendname == weather_bot:
+                    if friendname in bots:
                             if friendname in friends[username]:
                                 conn.send("Bot already added".encode())
                             else:
