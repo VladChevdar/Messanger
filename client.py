@@ -640,6 +640,8 @@ class AppClient(tk.Tk):
             if self.sock:
                 self.sock.close()
             self.destroy()
+        else:
+            messagebox.showerror("Error", "Close all other windows before exiting")
 
 class HundredsGame:
     def __init__(self, new_grid_size=5, numbers_list=None, send_message=None, friend_name=None, widget=None, chat_font=None):
