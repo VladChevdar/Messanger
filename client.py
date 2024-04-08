@@ -37,6 +37,7 @@ class AppClient(tk.Tk):
         self.sock = None
         self.initialize_login_frame()
         self.messages_text = None
+        self.same_message = 'nothing'
 
     def send_command(self, command):
         try:
@@ -333,6 +334,7 @@ class AppClient(tk.Tk):
                         self.messages_text.insert(tk.END, msg[1:len(msg)-9] + "\n", 'chat_font')
                     self.messages_text.insert(tk.END, time_padding + msg[len(msg)-9:] + "\n", 'time_font')
                     prev_msg_sign = "-"
+                    self.same_message = msg
                 else: # system messsage
                     # do not display unread messages if nothing was sent
                     if messages_list[len(messages_list)-1] != msg:
@@ -435,6 +437,9 @@ class AppClient(tk.Tk):
             self.start_game(message)
             return
 
+        if message == "#same":
+            message = self.same_message[1:len(self.same_message)-9]
+
         if message:
             if message[:9] == "#weather ":
                 self.fetch_weather(message[9:])
@@ -446,6 +451,7 @@ class AppClient(tk.Tk):
                 self.update_entire_chat()
                 self.last_message = ''
                 return
+
             if message[:13] == "#numbers game":
                 try:
                     _, grid_size, numbers_list = message[10:].split('#')
@@ -462,7 +468,7 @@ class AppClient(tk.Tk):
                         else:
                             grid_size = int(grid_size) if int(grid_size) <= 10  and int(grid_size) >= 3 else 0
                     except ValueError:
-                        grid_size = 1
+                        grid_size = 5
                     numbers_list = random.sample(range(1, grid_size*grid_size + 1), grid_size*grid_size)
                 if grid_size == 0:
                     message = "Invalid matrix size"
@@ -689,13 +695,13 @@ class HundredsGame:
         if number == self.number_to_find:
             self.number_to_find += 1
             if number == self.numbers_count:
-                self.print_result(f"Congratulations! You found all the {self.numbers_count} numbers")
+                self.print_result(finished=True)
                 self.root.quit()
                 self.root.destroy()
                 return
             self.update_grid()
 
-    def print_result(self, message=""):
+    def print_result(self, finished=False):
         elapsed_time = time.time() - self.start_time
         minutes, seconds = divmod(elapsed_time, 60)
         # Define the game_result message based on whether minutes > 0.
@@ -704,15 +710,22 @@ class HundredsGame:
         else:
             time_msg = f"{int(seconds)} seconds"
 
-        game_result = f"{message}\nTime: {time_msg}!"
-
         # Check if we need to send a message or update the widget directly.
         if self.send_message and self.friend_name:
             if self.friend_name == hundreds_game:
                 self.widget.config(state='normal')
+                if not finished:
+                    game_result = f"Game Over!\nYou found {self.number_to_find - 1} out of {self.numbers_count} numbers\nTime: {time_msg}"
+                else:
+                    game_result = f"Congradulations!\nYou found all the {self.number_to_find} numbers\nTime: {time_msg}"
+                
                 self.widget.insert(tk.END, "\n" + game_result + "\n", 'chat_font')
                 self.widget.see(tk.END)
             else:
+                if not finished:
+                    game_result = f"Game Over!\nI found {self.number_to_find - 1} out of {self.numbers_count} numbers\nTime: {time_msg}"
+                else:
+                    game_result = f"Let's go!\nI found all the {self.number_to_find} numbers\nTime: {time_msg}"
                 self.send_message(self.friend_name, game_result)
         global screen_on
         screen_on -= 1
@@ -750,7 +763,7 @@ class HundredsGame:
     def on_close(self):
         if hasattr(self, 'after_id') and self.after_id:
             self.root.after_cancel(self.after_id)
-        self.print_result(f"You found {self.number_to_find - 1} out of {self.numbers_count} numbers")
+        self.print_result()
         self.root.destroy()
 
 if __name__ == "__main__":
