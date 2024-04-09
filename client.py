@@ -455,7 +455,10 @@ class AppClient(tk.Tk):
             if message[:13] == "#numbers game":
                 try:
                     _, grid_size, numbers_list = message[10:].split('#')
-                    numbers_list = ast.literal_eval(numbers_list)
+                    try:
+                        numbers_list = ast.literal_eval(numbers_list)
+                    except:
+                        grid_size = 1
                     if not (len(numbers_list) == len(set(numbers_list)) and 
                             len(numbers_list) == int(grid_size)*int(grid_size) and
                             all(1 <= n <= int(grid_size)*int(grid_size) for n in numbers_list)):
