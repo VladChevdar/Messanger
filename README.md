@@ -24,7 +24,7 @@ To start the server:
 python server.py [Optional: Port Number]
 ```
 
-## Server and Client Commands (no spaces between '|' character)
+## Server and Client Commands
 
 - `SIGNUP|username|password` - Registers a new user.
 - `LOGIN|username|password` - Logs in an existing user.
