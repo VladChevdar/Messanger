@@ -1,4 +1,4 @@
-# Real-Time Chat Application with Bots
+## Real-Time Chat Application with Bots
 
 This real-time chat application enables users to sign up, log in, manage friends, send messages, and interact with bots  
 such as Weather Bot" and "Numbers Game". The system uses Python sockets for network communication and multithreading  
