@@ -39,7 +39,7 @@ python server.py [Optional: Port Number]
 - **Socket Programming**: For client-server communication.
 - **Threading**: To handle multiple client connections concurrently.
 
-## System Architecture
+#### System Architecture
 
 The application consists of a server module and a client module. The server handles all incoming connections, processes client requests, and manages data storage in memory. The client module interacts with the server via commands and handles user inputs and outputs.
 
