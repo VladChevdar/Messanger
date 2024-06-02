@@ -18,7 +18,7 @@ git clone [repository URL]
 ```
 
 
-#### Usage
+## Usage
 To start the server:
 ```bash
 python server.py [Optional: Port Number]
