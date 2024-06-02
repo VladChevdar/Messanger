@@ -1,4 +1,4 @@
-## Real-Time Chat Application with Bots
+# Real-Time Chat Application with Bots
 
 This real-time chat application enables users to sign up, log in, manage friends, send messages, and interact with bots  
 such as Weather Bot" and "Numbers Game". The system uses Python sockets for network communication and multithreading  
@@ -11,20 +11,20 @@ to handle multiple client connections simultaneously, ensuring real-time interac
 - **Bot Interaction:** Engage with built-in bots for additional functionality like weather reports and games.  
 - **Notifications:** Real-time notifications for new messages and changes in friend status.
 
-## Installation
+### Installation
 Clone the repository:
 ```bash
 git clone [repository URL]
 ```
 
 
-## Usage
+### Usage
 To start the server:
 ```bash
 python server.py [Optional: Port Number]
 ```
 
-## Server and Client Commands
+### Server and Client Commands
 
 - `SIGNUP|username|password` - Registers a new user.
 - `LOGIN|username|password` - Logs in an existing user.
@@ -33,7 +33,7 @@ python server.py [Optional: Port Number]
 - `SHOWFRIENDS|username` - Displays the friend list of the user.
 - `LOGOUT` - Closes the user session.
 
-## Technologies
+### Technologies
 
 - **Python**: Core programming language used.
 - **Socket Programming**: For client-server communication.
