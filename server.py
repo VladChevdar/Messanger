@@ -297,7 +297,8 @@ def handle_client(conn, addr):
             data = conn.recv(1024).decode()
             if not data:
                 break  # No data, close connection
-            """
+
+            # For debugging purposes print data on server terminal
             if data[:7] != "GETCHAT" or display_chat_command:
                 if len(data) > 50:
                     print(data[:50] + "...")
@@ -307,7 +308,8 @@ def handle_client(conn, addr):
 
             if data[:11] == "SHOWFRIENDS":
                 display_chat_command = True
-            """
+
+            # Apply the received command
             command, *args = data.split('|')
             if command in command_handlers:
                 if command == "LOGIN":
