@@ -268,12 +268,36 @@ def handle_logout(conn, login_user):
 def handle_client(conn, addr):
     display_chat_command = True
     login_user = None
+
+    command_handlers = {
+        "SIGNUP": handle_signup,
+        "LOGIN": handle_login,
+        "UPDATE_LIVE_BUTTON": handle_update_live_button,
+        "SET_LIVE_BUTTON": handle_set_live_button,
+        "FRIEND_REQUESTS": handle_friend_requests,
+        "IS_USER_ONLINE": handle_is_user_online,
+        "CHECK_FOR_NOTIFICATION": handle_check_for_notification,
+        "READ_MESSAGES": handle_read_messages,
+        "FRIEND_OFF": handle_friend_off,
+        "FRIENDSCOUNT": handle_friends_count,
+        "DELETE_FRIEND": handle_delete_friend,
+        "CHANGE_FRIEND_REQUESTS": handle_change_friend_requests,
+        "ADDFRIEND": handle_add_friend,
+        "SHOWFRIENDS": handle_show_friends,
+        "CLEAR_MESSAGES": handle_clear_messages,
+        "REPORT_WEATHER": handle_report_weather,
+        "SENDMESSAGE": handle_send_message,
+        "GETCHAT": handle_get_chat,
+        "LOGOUT": handle_logout
+    }
+
     while True:
         try:
+            # Receive data from client
             data = conn.recv(1024).decode()
             if not data:
                 break  # No data, close connection
-
+            """
             if data[:7] != "GETCHAT" or display_chat_command:
                 if len(data) > 50:
                     print(data[:50] + "...")
@@ -283,46 +307,13 @@ def handle_client(conn, addr):
 
             if data[:11] == "SHOWFRIENDS":
                 display_chat_command = True
-
+            """
             command, *args = data.split('|')
-            if command == "SIGNUP":
-                handle_signup(conn, args)
-            elif command == "LOGIN":
-                login_user = handle_login(conn, args)
-            elif command == "UPDATE_LIVE_BUTTON":
-                handle_update_live_button(conn, args)
-            elif command == "SET_LIVE_BUTTON":
-                handle_set_live_button(conn, args)
-            elif command == "FRIEND_REQUESTS":
-                handle_friend_requests(conn, args)
-            elif command == "IS_USER_ONLINE":
-                handle_is_user_online(conn, args)
-            elif command == "CHECK_FOR_NOTIFICATION":
-                handle_check_for_notification(conn, args)
-            elif command == "READ_MESSAGES":
-                handle_read_messages(conn, args)
-            elif command == "FRIEND_OFF":
-                handle_friend_off(conn, args)
-            elif command == "FRIENDSCOUNT":
-                handle_friends_count(conn, args)
-            elif command == "DELETE_FRIEND":
-                handle_delete_friend(conn, args)
-            elif command == "CHANGE_FRIEND_REQUESTS":
-                handle_change_friend_requests(conn, args)
-            elif command == "ADDFRIEND":
-                handle_add_friend(conn, args)
-            elif command == "SHOWFRIENDS":
-                handle_show_friends(conn, args)
-            elif command == "CLEAR_MESSAGES":
-                handle_clear_messages(conn, args)
-            elif command == "REPORT_WEATHER":
-                handle_report_weather(conn, args)
-            elif command == "SENDMESSAGE":
-                handle_send_message(conn, args)
-            elif command == "GETCHAT":
-                handle_get_chat(conn, args)
-            elif command == "LOGOUT":
-                handle_logout(conn, login_user)
+            if command in command_handlers:
+                if command == "LOGIN":
+                    login_user = command_handlers[command](conn, args)
+                else:
+                    command_handlers[command](conn, args)
         except Exception as e:
             # Handle client disconnect or any other exceptions
             print(f"Exception: {e}")
